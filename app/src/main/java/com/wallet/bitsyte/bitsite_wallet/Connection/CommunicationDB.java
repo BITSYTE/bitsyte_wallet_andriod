@@ -79,7 +79,7 @@ public class CommunicationDB {
         runnerLoc.execute("login");
     }
 
-    
+
 
     private class AsyncTaskRunnerpost extends AsyncTask<String, String, String> {
 
