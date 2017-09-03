@@ -79,41 +79,7 @@ public class CommunicationDB {
         runnerLoc.execute("login");
     }
 
-    public void shops(double latitude,double longitude,String category) {
-
-        try {
-            JSONArray jA = new JSONArray("["+latitude+","+longitude+"]");
-            JSONObject jO = new JSONObject();
-            jO.put("category",category);
-            jO.put("location",jA);
-            parametros = new LinkedHashMap<>();
-            parametros.put("category", category);
-            parametros.put("location", jA);
-            AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
-            Log.e("API","api/shops/"+jO+"");
-            runnerLoc.execute("api/shops",jO+"");
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void shop(String id) {
-
-        try {
-
-            JSONObject jO = new JSONObject();
-            jO.put("shop_id",id);
-            parametros = new LinkedHashMap<>();
-            //parametros.put("location", jO);
-            AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
-            Log.e("API","api/shops/"+jO+"");
-            runnerLoc.execute("api/shops/"+id,jO+"");
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
+    
 
     private class AsyncTaskRunnerpost extends AsyncTask<String, String, String> {
 
