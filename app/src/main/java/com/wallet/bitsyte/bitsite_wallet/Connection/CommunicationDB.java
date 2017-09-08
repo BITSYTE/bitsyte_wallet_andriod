@@ -24,6 +24,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
@@ -39,7 +40,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class CommunicationDB {
 
-    private static final String URLSERVER = "https://uxie.mxcorp.net/"; //pruebas
+    private static final String URLSERVER = "https://www.hidoctor.mx/"; //pruebas
     private static String URLusers = "";
     private static String URLcourses = "";
     private Context mContext;
@@ -78,6 +79,14 @@ public class CommunicationDB {
         AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
         runnerLoc.execute("login");
     }
+    public void Regiter(String email, String password) {
+        parametros = new LinkedHashMap<>();
+        parametros.put("usernameOrEmail", email);
+        parametros.put("pass", password);
+        // showDialog = false;
+        AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
+        runnerLoc.execute("test_json");
+    }
 
 
 
@@ -88,7 +97,8 @@ public class CommunicationDB {
 
         @Override
         protected String doInBackground(String... params) {
-
+            try {
+            /*
             HttpURLConnection urlConnection;
             String url;
             String data = params[1];
@@ -102,6 +112,8 @@ public class CommunicationDB {
                 urlConnection.setRequestMethod("POST");
                 urlConnection.connect();
 
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("para_1", "arg_1");
                 //Write
                 OutputStream outputStream = urlConnection.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
@@ -126,8 +138,54 @@ public class CommunicationDB {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-            return result;
+            */
+
+            String result = null;
+
+                URL url = new URL(URLSERVER+params[0]); //Enter URL here
+                HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
+                httpURLConnection.setDoOutput(true);
+                httpURLConnection.setRequestMethod("POST"); // here you are telling that it is a POST request, which can be changed into "PUT", "GET", "DELETE" etc.
+                httpURLConnection.setRequestProperty("Content-Type", "application/json"); // here you are setting the `Content-Type` for the data you are sending which is `application/json`
+                httpURLConnection.connect();
+
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("user", "Rafael");
+                jsonObject.put("password", "Pass");
+
+                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
+                wr.writeBytes(jsonObject.toString());
+                wr.flush();
+                wr.close();
+
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream(), "UTF-8"));
+
+                String line = null;
+                StringBuilder sb = new StringBuilder();
+
+                while ((line = bufferedReader.readLine()) != null) {
+                    sb.append(line);
+                }
+
+                bufferedReader.close();
+                result = sb.toString();
+
+                return result;
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                return "";
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "";
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return "";
+            }
+
         }
 
         @Override
