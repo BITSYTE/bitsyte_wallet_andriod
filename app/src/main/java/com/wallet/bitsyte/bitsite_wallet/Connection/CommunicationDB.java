@@ -40,7 +40,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class CommunicationDB {
 
-    private static final String URLSERVER = "https://www.hidoctor.mx/"; //pruebas
+    //private static final String URLSERVER = "https://www.hidoctor.mx/"; //pruebas
+    private static final String URLSERVER = "https://wallet.mxcorp.net/"; //pruebas
     private static String URLusers = "";
     private static String URLcourses = "";
     private Context mContext;
@@ -83,12 +84,45 @@ public class CommunicationDB {
         parametros = new LinkedHashMap<>();
         parametros.put("usernameOrEmail", email);
         parametros.put("pass", password);
+
+        JSONObject jO = new JSONObject();
+        JSONObject jO2 = new JSONObject();
+
+        /*
+        {
+"first_name":"Pedro",
+"last_name":"Luna",
+"email":"pedro@mxcorp.net",
+"password":"holamundo",
+"password_confirmation":"holamundo",
+"device":{
+      "device_id":"HSQT90XSD12AS1OP",
+      "type":"andrioid",
+      "version":"8.0"
+    }
+}
+
+         */
+        try {
+            jO.put("first_name","Pedro");
+            jO.put("last_name","Luna");
+            jO.put("email","pedro@mxcorp.net");
+            jO.put("password","holamundo");
+            jO.put("password_confirmation","holamundo");
+            jO.put("password_confirmation","holamundo");
+
+            jO2.put("device_id","HSQT90XSD12AS1OP");
+            jO2.put("type","andrioid");
+            jO2.put("version","8.0");
+
+            jO.put("device",jO2);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         // showDialog = false;
         AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
-        runnerLoc.execute("test_json");
+        runnerLoc.execute("api/v1/register",jO+"");
     }
-
-
 
     private class AsyncTaskRunnerpost extends AsyncTask<String, String, String> {
 
@@ -97,8 +131,7 @@ public class CommunicationDB {
 
         @Override
         protected String doInBackground(String... params) {
-            try {
-            /*
+
             HttpURLConnection urlConnection;
             String url;
             String data = params[1];
@@ -112,8 +145,6 @@ public class CommunicationDB {
                 urlConnection.setRequestMethod("POST");
                 urlConnection.connect();
 
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("para_1", "arg_1");
                 //Write
                 OutputStream outputStream = urlConnection.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
@@ -138,54 +169,10 @@ public class CommunicationDB {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            */
-
-            String result = null;
-
-                URL url = new URL(URLSERVER+params[0]); //Enter URL here
-                HttpURLConnection httpURLConnection = (HttpURLConnection)url.openConnection();
-                httpURLConnection.setDoOutput(true);
-                httpURLConnection.setRequestMethod("POST"); // here you are telling that it is a POST request, which can be changed into "PUT", "GET", "DELETE" etc.
-                httpURLConnection.setRequestProperty("Content-Type", "application/json"); // here you are setting the `Content-Type` for the data you are sending which is `application/json`
-                httpURLConnection.connect();
-
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("user", "Rafael");
-                jsonObject.put("password", "Pass");
-
-                DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
-                wr.writeBytes(jsonObject.toString());
-                wr.flush();
-                wr.close();
-
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream(), "UTF-8"));
-
-                String line = null;
-                StringBuilder sb = new StringBuilder();
-
-                while ((line = bufferedReader.readLine()) != null) {
-                    sb.append(line);
-                }
-
-                bufferedReader.close();
-                result = sb.toString();
-
-                return result;
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                return "";
-            } catch (IOException e) {
-                e.printStackTrace();
-                return "";
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return "";
             }
 
+
+            return result;
         }
 
         @Override
