@@ -3,21 +3,37 @@ package com.wallet.bitsyte.bitsite_wallet.Connection;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.wallet.bitsyte.bitsite_wallet.Events.RetunDataEvent;
+import com.wallet.bitsyte.bitsite_wallet.R;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.ByteArrayBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -29,6 +45,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -72,13 +89,40 @@ public class CommunicationDB {
         boundary = "===" + System.currentTimeMillis() + "===";
     }
 
-    public void Login(String email, String password) {
-        parametros = new LinkedHashMap<>();
-        parametros.put("usernameOrEmail", email);
-        parametros.put("pass", password);
+    public void Login(String email, String password,String device_id,String version) {
+
+
+        final JSONObject jO = new JSONObject();
+        JSONObject jO2 = new JSONObject();
+        try {
+            jO.put("email",email);
+            jO.put("password",password);
+
+            jO2.put("device_id",device_id);
+            jO2.put("type","andrioid");
+            jO2.put("version",version);
+
+            jO.put("device",jO2);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         // showDialog = false;
-        AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
-        runnerLoc.execute("login");
+
+        new Thread(new Runnable() {
+            public void run() {
+               // sendHTTPData(URLSERVER+"api/v1/login",jO);
+                try {
+                    executeMultipartPost(URLSERVER+"api/v1/login",jO);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+
+
+        //AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
+        //runnerLoc.execute("api/v1/login",jO+"");
     }
     public void Regiter(String email, String password) {
         parametros = new LinkedHashMap<>();
@@ -87,22 +131,6 @@ public class CommunicationDB {
 
         JSONObject jO = new JSONObject();
         JSONObject jO2 = new JSONObject();
-
-        /*
-        {
-"first_name":"Pedro",
-"last_name":"Luna",
-"email":"pedro@mxcorp.net",
-"password":"holamundo",
-"password_confirmation":"holamundo",
-"device":{
-      "device_id":"HSQT90XSD12AS1OP",
-      "type":"andrioid",
-      "version":"8.0"
-    }
-}
-
-         */
         try {
             jO.put("first_name","Pedro");
             jO.put("last_name","Luna");
@@ -132,53 +160,84 @@ public class CommunicationDB {
         @Override
         protected String doInBackground(String... params) {
 
-            HttpURLConnection urlConnection;
+            HttpsURLConnection urlConnection;
             String url;
             String data = params[1];
+            Log.e("data",data);
+
             String result = null;
             try {
                 //Connect
-                urlConnection = (HttpURLConnection) ((new URL(URLSERVER+params[0]).openConnection()));
+                urlConnection = (HttpsURLConnection) ((new URL(URLSERVER+params[0]).openConnection()));
+
                 urlConnection.setDoOutput(true);
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("Accept", "application/json");
+                urlConnection.setDoInput(true);
                 urlConnection.setRequestMethod("POST");
-                urlConnection.connect();
+                urlConnection.setRequestProperty("Accept", "application/json");
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                //urlConnection.connect();
+
+
+                urlConnection.setRequestMethod("POST");
+                urlConnection.connect(); // Note the connect() here
+                OutputStream os = urlConnection.getOutputStream();
+                OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
+                osw.write(data.toString());
+                osw.flush();
+                osw.close();
+
+                StringBuilder sb = null;
+                String line = null;
+
+                BufferedReader br = new BufferedReader(new InputStreamReader( urlConnection.getInputStream(),"utf-8"));
+                while ((line = br.readLine()) != null) {
+                    sb.append(line + "\n");
+                }
+                br.close();
+                System.out.println(""+sb.toString());
+
 
                 //Write
                 OutputStream outputStream = urlConnection.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
                 writer.write(data);
                 writer.close();
                 outputStream.close();
 
-                //Read
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), "UTF-8"));
+                BufferedReader bufferedReader;
+                //StringBuilder sb;
 
-                String line = null;
-                StringBuilder sb = new StringBuilder();
+                Log.e("BASEDE DATOS", "URL "+urlConnection.getInputStream());
+                bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+
+
+                sb = new StringBuilder();
 
                 while ((line = bufferedReader.readLine()) != null) {
                     sb.append(line);
                 }
+
 
                 bufferedReader.close();
                 result = sb.toString();
 
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
+                Log.e("BASEDE DATOS", "Error: "+e);
             } catch (IOException e) {
                 e.printStackTrace();
+                Log.e("BASEDE DATOS", "Error: "+e);
             }
-
 
             return result;
+
         }
 
         @Override
         protected void onPostExecute(String resp) {
             try {
-                Log.w("Respuesta", resp);
+                Log.w("Respuesta", resp+"..");
 
                 if (retunDataEvent != null) {
                     retunDataEvent.onDataEvent(resp, route1);
@@ -187,7 +246,8 @@ public class CommunicationDB {
                 if (retunDataEvent != null) {
                     retunDataEvent.onDataEvent("{}", "error");
                 }
-                Log.e("BASEDE DATOS", "Algo se rompio");
+                e.printStackTrace();
+                Log.e("BASEDE DATOS", "Algo se rompio"+e);
             }
 
         }
@@ -206,284 +266,122 @@ public class CommunicationDB {
         }
     }
 
-    private class AsyncTaskRunnerImage extends AsyncTask<String, String, String> {
+    public String sendHTTPData(String urlpath, JSONObject json) {
+        HttpsURLConnection connection = null;
+        try {
+            Log.e("urlpath",urlpath);
+            URL url=new URL(urlpath);
+            connection = (HttpsURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            OutputStreamWriter streamWriter = new OutputStreamWriter(connection.getOutputStream());
+            streamWriter.write(json.toString());
+            streamWriter.flush();
+            StringBuilder stringBuilder = new StringBuilder();
+            if (connection.getResponseCode() == HttpsURLConnection.HTTP_OK){
+                InputStreamReader streamReader = new InputStreamReader(connection.getInputStream());
+                BufferedReader bufferedReader = new BufferedReader(streamReader);
+                String response = null;
+                while ((response = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(response + "\n");
+                }
+                bufferedReader.close();
 
-        private String resp;
-        private String route1 = "";
+                Log.d("test1", stringBuilder.toString());
+                return stringBuilder.toString();
+            } else {
+                Log.e("test2", connection.getResponseMessage());
+                return null;
+            }
+        } catch (Exception exception){
+            Log.e("test3", exception.toString());
+            return null;
+        } finally {
+            if (connection != null){
+                connection.disconnect();
+            }
+        }
+    }
+
+    Handler Eventhandler = new Handler(new Handler.Callback() {
 
         @Override
-        protected String doInBackground(String... params) {
-
+        public boolean handleMessage(android.os.Message msg) {
             try {
-                String iFileName = parametros.get("fileName") + "";
-                String lineEnd = "\r\n";
-                String twoHyphens = "--";
-                String boundary = "*****";
-                String Tag = "Imagen";
-                try {
-                    Log.e(Tag, "Starting Http File Sending to URL");
 
-                    route1 = Route = params[0];
-                    URL url = new URL(URLSERVER + Route);
-                    // Open a HTTP connection to the URL
-                    HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                    // Allow Inputs
-                    conn.setDoInput(true);
-                    // Allow Outputs
-                    conn.setDoOutput(true);
-                    // Don't use a cached copy.
-                    conn.setUseCaches(false);
-                    // Use a post method.
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Connection", "Keep-Alive");
-                    conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
-                    DataOutputStream dos = new DataOutputStream(conn.getOutputStream());
-                    dos.writeBytes(twoHyphens + boundary + lineEnd);
-                    dos.writeBytes("Content-Disposition: form-data; name=\"title\"" + lineEnd);
-                    dos.writeBytes(lineEnd);
-                    dos.writeBytes(Title);
-                    dos.writeBytes(lineEnd);
-                    dos.writeBytes(twoHyphens + boundary + lineEnd);
-                    dos.writeBytes("Content-Disposition: form-data; name=\"description\"" + lineEnd);
-                    dos.writeBytes(lineEnd);
-                    dos.writeBytes(Description);
-                    dos.writeBytes(lineEnd);
-                    dos.writeBytes(twoHyphens + boundary + lineEnd);
-                    dos.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" + iFileName + "\"" + lineEnd);
-                    dos.writeBytes(lineEnd);
-
-                    Log.e(Tag, "Headers are written");
-
-                    // create a buffer of maximum size
-                    int bytesAvailable = fileInputStream.available();
-
-                    int maxBufferSize = 1024;
-                    int bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                    byte[] buffer = new byte[bufferSize];
-
-                    // read file and write it into form...
-                    int bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-
-                    while (bytesRead > 0) {
-                        dos.write(buffer, 0, bufferSize);
-                        bytesAvailable = fileInputStream.available();
-                        bufferSize = Math.min(bytesAvailable, maxBufferSize);
-                        bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-                    }
-                    dos.writeBytes(lineEnd);
-                    dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
-
-                    // close streams
-                    fileInputStream.close();
-
-                    dos.flush();
-                    Log.e(Tag, "File Sent, Response: " + String.valueOf(conn.getResponseCode()));
-                    //->
-                    //byte[] postDataBytes = postData.toString().getBytes("UTF-8");
-                    //conn.getOutputStream().write(postDataBytes);
-
-
-                    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-                    String line;
-                    StringBuilder responce = new StringBuilder();
-
-                    while ((line = in.readLine()) != null) {
-                        responce.append(line);
-                        resp = responce.toString();
-                    }
-                    in.close();
-
-                    Log.e("IMAGEN", "THIS IS YOU RESP " + resp);
-
-                    dos.close();
-                } catch (Exception ex) {
-                    Log.e(Tag, "URL error: " + ex.getMessage(), ex);
+                if (msg.arg1 == 1) {
+                    Toast.makeText(mContext,(String)msg.obj,
+                            Toast.LENGTH_SHORT).show();
                 }
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return resp;
+
+            return false;
         }
+    });
 
-
-        public void addFilePart(String fieldName, File uploadFile)
-                throws IOException {
-            String fileName = uploadFile.getName();
-            writer.append("--" + boundary).append(LINE_FEED);
-            writer.append(
-                    "Content-Disposition: form-data; name=\"" + fieldName
-                            + "\"; filename=\"" + fileName + "\"")
-                    .append(LINE_FEED);
-            writer.append(
-                    "Content-Type: "
-                            + URLConnection.guessContentTypeFromName(fileName))
-                    .append(LINE_FEED);
-            writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
-            writer.append(LINE_FEED);
-            writer.flush();
-
-            FileInputStream inputStream = new FileInputStream(uploadFile);
-            byte[] buffer = new byte[4096];
-            int bytesRead = -1;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            outputStream.flush();
-            inputStream.close();
-
-            writer.append(LINE_FEED);
-            writer.flush();
-        }
-
-
-        @Override
-        protected void onPostExecute(String resp) {
-            try {
-                Log.w("Respuesta", resp);
-
-                if (retunDataEvent != null) {
-                    retunDataEvent.onDataEvent(resp, route1);
-                }
-            } catch (Exception e) {
-                if (retunDataEvent != null) {
-                    retunDataEvent.onDataEvent("{}", "error");
-                }
-                Log.e("BASEDE DATOS", "Algo se rompio");
-            }
-
-        }
-
-        @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
-        protected void onProgressUpdate(String... text) {
-        }
-    }
-
-    private class AsyncTaskRunnerget extends AsyncTask<String, String, String> {
-
-        private String resp;
-        private String route1 = "";
-
-        @Override
-        protected String doInBackground(String... params) { // GET
-
-            try {
-                route1 = Route = params[0];
-                URL mUrl = new URL(URLSERVER + Route);
-                HttpURLConnection httpConnection = (HttpURLConnection) mUrl.openConnection();
-                httpConnection.setRequestMethod("GET");
-                httpConnection.setRequestProperty("Content-length", "0");
-                httpConnection.setUseCaches(false);
-                httpConnection.setAllowUserInteraction(false);
-                httpConnection.setConnectTimeout(10000);
-                httpConnection.setReadTimeout(10000);
-
-                httpConnection.connect();
-
-                int responseCode = httpConnection.getResponseCode();
-
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    BufferedReader br = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        sb.append(line + "\n");
-                    }
-                    br.close();
-                    return sb.toString();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String resp) { // GET
-
-            if (route1.equals("getStatus")) {
-                JSONObject jO = null;
-                try {
-                    jO = new JSONObject(resp);
-
-                    URLusers = (new JSONObject(jO.getString("urls")).getString("users"));
-                    URLcourses = (new JSONObject(jO.getString("urls")).getString("courses"));
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                Log.e("Respuesta1", route1 + ":" + resp);
-
-                if (retunDataEvent != null) {
-                    retunDataEvent.onDataEvent(resp, route1);
-                }
-            } catch (Exception e) {
-                if (retunDataEvent != null) {
-                    retunDataEvent.onDataEvent("{}", "error");
-                }
-                Log.e("BASEDE DATOS", "Algo se rompio");
-            }
-
-        }
-
-        @Override
-        protected void onPreExecute() { // GET
-
-        }
-
-        @Override
-        protected void onProgressUpdate(String... text) {
-        }
-    }
-
-    public static final String md5(final String s) {
-        final String MD5 = "MD5";
+    public void executeMultipartPost(String url,JSONObject json) throws Exception {
         try {
-            // Create MD5 Hash
-            MessageDigest digest = java.security.MessageDigest
-                    .getInstance(MD5);
-            digest.update(s.getBytes());
-            byte messageDigest[] = digest.digest();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-            // Create Hex String
-            StringBuilder hexString = new StringBuilder();
-            for (byte aMessageDigest : messageDigest) {
-                String h = Integer.toHexString(0xFF & aMessageDigest);
-                while (h.length() < 2)
-                    h = "0" + h;
-                hexString.append(h);
+            byte[] data = bos.toByteArray();
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPost postRequest = new HttpPost(url);
+            //ByteArrayBody bab = new ByteArrayBody(data, getString(R.string.file_path));
+
+            MultipartEntity reqEntity = new MultipartEntity(
+                    HttpMultipartMode.BROWSER_COMPATIBLE);
+
+            //postRequest.addHeader("access_token", auth);
+
+
+            //passes the results to a string builder/entity
+            StringEntity se = new StringEntity(json.toString());
+
+            //sets the post request as the resulting string
+            postRequest.setEntity(se);
+
+            postRequest.setHeader("Accept", "application/json");
+            postRequest.setHeader("Content-type", "application/json");
+
+
+            postRequest.setEntity(reqEntity);
+            HttpResponse response = httpClient.execute(postRequest);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    response.getEntity().getContent(), "UTF-8"));
+            String sResponse;
+            StringBuilder s = new StringBuilder();
+
+            while ((sResponse = reader.readLine()) != null) {
+                s = s.append(sResponse);
             }
-            return hexString.toString();
+            JSONObject object=null;
+            System.out.println("Response: " + s);
+            try {
+                object = new JSONObject(s+"");
+                JSONObject json2 = object.getJSONObject("errors");
 
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+                android.os.Message msg = new android.os.Message();
+                msg.arg1 = 1;
+                msg.obj  = json2+"";
+                Eventhandler.sendMessage(msg);
+
+
+
+            }catch (Exception e){e.printStackTrace();}
+
+
+
+        } catch (Exception e) {
+            // handle exception here
+            Log.e(e.getClass().getName(), e.getMessage());
         }
-        return "";
     }
 
-    public static String getSha1Hex(String clearString) {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
-            messageDigest.update(clearString.getBytes("UTF-8"));
-            byte[] bytes = messageDigest.digest();
-            StringBuilder buffer = new StringBuilder();
-            for (byte b : bytes) {
-                buffer.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
-            }
-            return buffer.toString();
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
-            return null;
-        }
-    }
+
 
 }
