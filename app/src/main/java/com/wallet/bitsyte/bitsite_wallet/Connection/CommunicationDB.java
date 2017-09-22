@@ -124,32 +124,43 @@ public class CommunicationDB {
         //AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
         //runnerLoc.execute("api/v1/login",jO+"");
     }
-    public void Regiter(String email, String password) {
+    public void Regiter(String email, String password,String first_name, String last_name,String password_confirmation,String device_id,String version) {
         parametros = new LinkedHashMap<>();
         parametros.put("usernameOrEmail", email);
         parametros.put("pass", password);
 
-        JSONObject jO = new JSONObject();
+        final JSONObject jO = new JSONObject();
         JSONObject jO2 = new JSONObject();
         try {
-            jO.put("first_name","Pedro");
-            jO.put("last_name","Luna");
-            jO.put("email","pedro@mxcorp.net");
-            jO.put("password","holamundo");
-            jO.put("password_confirmation","holamundo");
-            jO.put("password_confirmation","holamundo");
+            jO.put("first_name",first_name);
+            jO.put("last_name",last_name);
+            jO.put("email",email);
+            jO.put("password",password);
+            jO.put("password_confirmation",password_confirmation);
 
-            jO2.put("device_id","HSQT90XSD12AS1OP");
+
+            jO2.put("device_id",device_id);
             jO2.put("type","andrioid");
-            jO2.put("version","8.0");
+            jO2.put("version",version);
 
             jO.put("device",jO2);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        // showDialog = false;
-        AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
-        runnerLoc.execute("api/v1/register",jO+"");
+
+        new Thread(new Runnable() {
+            public void run() {
+                // sendHTTPData(URLSERVER+"api/v1/login",jO);
+                try {
+                    executeMultipartPost(URLSERVER+"api/v1/register",jO);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        //AsyncTaskRunnerpost runnerLoc = new AsyncTaskRunnerpost();
+        //runnerLoc.execute("api/v1/register",jO+"");
     }
 
     private class AsyncTaskRunnerpost extends AsyncTask<String, String, String> {
@@ -313,8 +324,14 @@ public class CommunicationDB {
             try {
 
                 if (msg.arg1 == 1) {
-                    Toast.makeText(mContext,(String)msg.obj,
-                            Toast.LENGTH_SHORT).show();
+                    JSONArray jsonArray = (JSONArray)msg.obj;
+                    JSONObject jO = jsonArray.getJSONObject(0);
+                    JSONObject jO1 = jsonArray.getJSONObject(1);
+
+                    if (retunDataEvent != null) {
+                        retunDataEvent.onDataEvent(jO+"", jO1.getString("url"));
+                    }
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -339,17 +356,22 @@ public class CommunicationDB {
             //postRequest.addHeader("access_token", auth);
 
 
-            //passes the results to a string builder/entity
+            //passes the results to a string builder/entityl
+            Log.e("Data", json.toString());
             StringEntity se = new StringEntity(json.toString());
 
+
             //sets the post request as the resulting string
-            postRequest.setEntity(se);
+            //postRequest.setEntity(se);
+
+            postRequest.setEntity(new StringEntity(json.toString(), "UTF-8"));
 
             postRequest.setHeader("Accept", "application/json");
             postRequest.setHeader("Content-type", "application/json");
 
 
-            postRequest.setEntity(reqEntity);
+
+            //postRequest.setEntity(reqEntity);
             HttpResponse response = httpClient.execute(postRequest);
             BufferedReader reader = new BufferedReader(new InputStreamReader(
                     response.getEntity().getContent(), "UTF-8"));
@@ -360,25 +382,44 @@ public class CommunicationDB {
                 s = s.append(sResponse);
             }
             JSONObject object=null;
+            JSONObject object2=null;
             System.out.println("Response: " + s);
             try {
+
                 object = new JSONObject(s+"");
-                JSONObject json2 = object.getJSONObject("errors");
+                object2 = new JSONObject();
+                object2.put("url",url);
+
+                JSONArray jsonArray = new JSONArray();
+                jsonArray.put(object);
+                jsonArray.put(object2);
+
 
                 android.os.Message msg = new android.os.Message();
                 msg.arg1 = 1;
-                msg.obj  = json2+"";
+                msg.obj  = jsonArray;
                 Eventhandler.sendMessage(msg);
 
 
 
-            }catch (Exception e){e.printStackTrace();}
+            }catch (Exception e){
+                e.printStackTrace();
+                android.os.Message msg = new android.os.Message();
+                msg.arg1 = 1;
+                msg.obj  = "Error:";
+                Eventhandler.sendMessage(msg);
+            }
 
 
 
         } catch (Exception e) {
             // handle exception here
             Log.e(e.getClass().getName(), e.getMessage());
+
+                android.os.Message msg = new android.os.Message();
+                msg.arg1 = 1;
+                msg.obj  = "Error:"+e.getMessage();
+                Eventhandler.sendMessage(msg);
         }
     }
 

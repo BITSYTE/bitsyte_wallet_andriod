@@ -3,7 +3,9 @@ package com.wallet.bitsyte.bitsite_wallet;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -28,8 +30,13 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.wallet.bitsyte.bitsite_wallet.Connection.CommunicationDB;
+import com.wallet.bitsyte.bitsite_wallet.Events.RetunDataEvent;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +46,7 @@ import static android.Manifest.permission.READ_CONTACTS;
 /**
  * A login screen that offers login via email/password.
  */
-public class RegisterActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class RegisterActivity extends AppCompatActivity implements LoaderCallbacks<Cursor>,RetunDataEvent {
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -65,18 +72,36 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     private View mLoginFormView;
     CommunicationDB communicationDB;
 
+    EditText email_input,password_input,name_input,l_name_input,passwordConf_input;
+    String device_id,version;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         // Set up the login form.
-        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        //mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
-        communicationDB = new CommunicationDB(this);
+        name_input = (EditText) findViewById(R.id.name_input);
+        l_name_input = (EditText) findViewById(R.id.l_name_input);
+        email_input = (EditText) findViewById(R.id.email_input);
+        password_input = (EditText) findViewById(R.id.password_input);
+        passwordConf_input = (EditText) findViewById(R.id.passwordConf_input);
 
-        mPasswordView = (EditText) findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        String android_id = Settings.Secure.getString(getContentResolver(),
+                Settings.Secure.ANDROID_ID);
+
+        int sdkVersion = android.os.Build.VERSION.SDK_INT;
+
+        device_id  = android_id+"x9";
+        version = sdkVersion+"";
+
+        communicationDB = new CommunicationDB(this);
+        communicationDB.OnReturnData(RegisterActivity.this);
+
+        //mPasswordView = (EditText) findViewById(R.id.password);
+       /* mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
                 if (id == R.id.login || id == EditorInfo.IME_NULL) {
@@ -85,13 +110,38 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                 }
                 return false;
             }
-        });
+        });*/
 
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                communicationDB.Regiter("","");
+                boolean complite = true;
+                if(email_input.getText().toString().equals("")){
+                    email_input.setError("Enter Email");
+                    complite=false;
+                }
+                if(password_input.getText().toString().equals("")){
+                    password_input.setError("Enter Password");
+                    complite=false;
+                }
+                if(name_input.getText().toString().equals("")){
+                    name_input.setError("Enter Name");
+                    complite=false;
+                }
+                if(l_name_input.getText().toString().equals("")){
+                    l_name_input.setError("Enter Last Name");
+                    complite=false;
+                }
+                if(passwordConf_input.getText().toString().equals("")){
+                    passwordConf_input.setError("Enter Password");
+                    complite=false;
+                }
+
+                if(complite){
+                communicationDB.Regiter(email_input.getText().toString(),password_input.getText().toString(),name_input.getText().toString(),
+                        l_name_input.getText().toString(),passwordConf_input.getText().toString(),device_id,device_id);
+                }
             }
         });
 
@@ -238,7 +288,31 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                 new ArrayAdapter<>(RegisterActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
-        mEmailView.setAdapter(adapter);
+       // mEmailView.setAdapter(adapter);
+    }
+
+    @Override
+    public void onDataEvent(String Json, String Route) {
+        JSONObject object = null;
+        try {
+
+            object = new JSONObject(Json);
+
+            if(object.has("errors")){
+                Toast.makeText(getApplicationContext(),object+"",
+                        Toast.LENGTH_SHORT).show();
+            }else if(object.has("token")){
+                Intent intent = new Intent(RegisterActivity.this, DemoActivity.class);
+                startActivity(intent);
+                finish();
+            }else{
+                Toast.makeText(getApplicationContext(),"Comunication Error",
+                        Toast.LENGTH_SHORT).show();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
 

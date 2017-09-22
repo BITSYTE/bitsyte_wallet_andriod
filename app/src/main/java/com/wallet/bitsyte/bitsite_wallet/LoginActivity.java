@@ -33,8 +33,13 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.wallet.bitsyte.bitsite_wallet.Connection.CommunicationDB;
+import com.wallet.bitsyte.bitsite_wallet.Events.RetunDataEvent;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +50,7 @@ import static java.security.AccessController.getContext;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
+public class LoginActivity extends Activity implements LoaderCallbacks<Cursor>, RetunDataEvent {
 
     /**
      * Id to identity READ_CONTACTS permission request.
@@ -79,13 +84,14 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
-        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+       // mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
         email_input = (EditText) findViewById(R.id.email_input);
         password_input = (EditText) findViewById(R.id.password_input);
 
         communicationDB = new CommunicationDB(this);
+        communicationDB.OnReturnData(LoginActivity.this);
 
 
 
@@ -96,16 +102,26 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
 
         device_id  = android_id;
         version = sdkVersion+"";
+
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         TextView regusterButton = (TextView) findViewById(R.id.btn_Register);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
                 //attemptLogin();
+                boolean complite = true;
+                if(email_input.getText().toString().equals("")){
+                    email_input.setError("Enter Email");
+                    complite=false;
+                }
+                if(password_input.getText().toString().equals("")){
+                    password_input.setError("Enter password");
+                    complite=false;
+                }
 
-
-
+                if(complite){
                 communicationDB.Login(email_input.getText().toString(),password_input.getText().toString(),device_id,version);
+                }
 
                // Intent intent = new Intent(LoginActivity.this, Main2Activity.class);
                // startActivity(intent);
@@ -118,7 +134,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
             public void onClick(View view) {
                 Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
                 startActivity(intent);
-                finish();
+
             }
         });
 
@@ -309,6 +325,35 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor> {
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
        // mEmailView.setAdapter(adapter);
+    }
+
+    @Override
+    public void onDataEvent(String Json, String Route) {
+        JSONObject object = null;
+        try {
+
+            object = new JSONObject(Json);
+
+            if(object.has("errors")){
+                Toast.makeText(getApplicationContext(),object+"",
+                        Toast.LENGTH_SHORT).show();
+            }else if(object.has("token")){
+                 Intent intent = new Intent(LoginActivity.this, DemoActivity.class);
+                 startActivity(intent);
+                 finish();
+            }else{
+                Toast.makeText(getApplicationContext(),"Comunication Error",
+                        Toast.LENGTH_SHORT).show();
+            }
+
+
+
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
