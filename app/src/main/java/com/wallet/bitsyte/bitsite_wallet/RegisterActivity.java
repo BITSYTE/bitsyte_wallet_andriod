@@ -94,7 +94,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
         int sdkVersion = android.os.Build.VERSION.SDK_INT;
 
-        device_id  = android_id+"x9";
+        device_id  = android_id+"x3";
         version = sdkVersion+"";
 
         communicationDB = new CommunicationDB(this);

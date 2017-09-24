@@ -123,7 +123,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor>, 
                 communicationDB.Login(email_input.getText().toString(),password_input.getText().toString(),device_id,version);
                 }
 
-               // Intent intent = new Intent(LoginActivity.this, Main2Activity.class);
+               // Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                // startActivity(intent);
                // finish();
             }
@@ -338,7 +338,7 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor>, 
                 Toast.makeText(getApplicationContext(),object+"",
                         Toast.LENGTH_SHORT).show();
             }else if(object.has("token")){
-                 Intent intent = new Intent(LoginActivity.this, DemoActivity.class);
+                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                  startActivity(intent);
                  finish();
             }else{
