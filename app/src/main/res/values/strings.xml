@@ -36,4 +36,27 @@
     <string name="menu_3">Menu 3</string>
     <string name="menu_4">Menu 4</string>
     <string name="menu_5">Menu 5</string>
+    <string name="nextSteps">Next steps</string>
+    <string name="wallets">Wallets</string>
+    <string name="likewallet">How do you like Bitsyte Wallet?</string>
+    <string name="ready">You Bitsyte Wallet is ready!</string>
+    <string name="youCanSee">On this screen you can see all you wallets, accounts, and assets</string>
+    <string name="addressBoook">Adreess Book</string>
+    <string name="help"><![CDATA[Help & Support]]></string>
+    <string name="sendFeedback">Send Feedback</string>
+    <string name="shareBitsyde">Share Bitsyte Wallet</string>
+    <string name="Preferents">Preferences</string>
+    <string name="bcSupport">Bitcoin Cash Support</string>
+    <string name="notificatios">Notifications</string>
+    <string name="Languaje">Language</string>
+    <string name="alternative">Alternative Currency</string>
+    <string name="BitcontNetwork">Bitcoin Network Fee Policy</string>
+    <string name="lookApp">Lock App</string>
+    <string name="WalletsIntegr"><![CDATA[Wallets & Integrations]]></string>
+    <string name="Avanced">Avanced</string>
+    <string name="About">About Bitsyte Wallet</string>
+    <string name="StartSend">Start sending bitcoins</string>
+    <string name="togetStarted">To get started, buy bitcoins or share your address. You can receive bitcoin from any wallet or service</string>
+    <string name="buyBitcoins">Buy Bitcoins</string>
+    <string name="showAddress">Show bitcoins address</string>
 </resources>

@@ -302,7 +302,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                 Toast.makeText(getApplicationContext(),object+"",
                         Toast.LENGTH_SHORT).show();
             }else if(object.has("token")){
-                Intent intent = new Intent(RegisterActivity.this, DemoActivity.class);
+                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
                 startActivity(intent);
                 finish();
             }else{
