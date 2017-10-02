@@ -120,12 +120,12 @@ public class LoginActivity extends Activity implements LoaderCallbacks<Cursor>, 
                 }
 
                 if(complite){
-                //    communicationDB.Login(email_input.getText().toString(),password_input.getText().toString(),device_id,version);
+                    communicationDB.Login(email_input.getText().toString(),password_input.getText().toString(),device_id,version);
                 }
 
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
+                //Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                //startActivity(intent);
+                //finish();
             }
         });
 
